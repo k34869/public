@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         anno-horizon-Extend
-// @version      1.0.7
+// @version      1.0.8
 // @description  anno-horizon 扩展程序
 // @author       Timeic
 // @license      GPL-3.0 License
@@ -557,18 +557,18 @@
                 if (urlMatch(routes[i], location.href)) {
                     Object.assign(target, extend instanceof Object === false ? {} : extend)
                     $(document.head)
-                        。append(`<style>${style}</style>`)
+                        .append(`<style>${style}</style>`)
                     if (typeof startExec === 'function')
                         startExec.call(target)
                     if (typeof bodyExec === 'function') {
                         bodyExec = bodyExec.bind(target)
                         $(document)
-                            。on('DOMContentLoaded', e.bodyExec)
+                            .on('DOMContentLoaded', e.bodyExec)
                     }
                     if (typeof loadExec === 'function') {
                         loadExec = loadExec.bind(target)
                         $(window)
-                            。on('load', loadExec)
+                            .on('load', loadExec)
                     }
                 }
             }
