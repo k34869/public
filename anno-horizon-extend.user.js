@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         anno-horizon-Extend
-// @version      1.0.2
+// @version      1.0.7
 // @description  anno-horizon 扩展程序
 // @author       Timeic
 // @license      GPL-3.0 License
@@ -27,8 +27,8 @@
                 document.body.removeChild(input)
             },
             async lockClaim(options) {
-                let {receiveManner = 'global', dataId, idType = 'raw', projectId, stageId} = options
-                if (localStorage.lockClaimUsers === undefined) {
+                let {receiveManner = 'global', dataId, idType = 'raw', projectId, stageId, target = '_blank'} = options
+                if (localStorage.lockClaimUsers === undefined || localStorage.lockClaimUsers === '') {
                     mdui.snackbar({message: `❌未设置锁定用户`})
                     return
                 }
@@ -72,11 +72,41 @@
                     })
                     if (s.data === null) {
                         mdui.snackbar({message: `❌${s.msg}`})
+                        setTimeout(() => {
+                            window.close()
+                        }, 3000)
                     } else {
                         mdui.snackbar({message: `🔔${id}`})
-                        window.open(s.data.url, '_blank')
+                        window.open(s.data.url, target)
+                        if (target === '_self')
+                            location.reload()
                     }
                 }
+            },
+            async getProjectDataList() {
+                let res = {data: { data_raw_id: {}, id: {}, todo: {data_raw_id: {}, id: {}} }}
+                let s = await $.ajax({
+                    type: "GET",
+                    url: `https://anno.horizon.ai/api/job/v2/projects/${this.urlParams.project === undefined ? this.urlParams.project_id : this.urlParams.project}/vers?limit=1000&stage_id=${this.urlParams.stage_id}&page=1&status=2`,
+                    dataType: 'json',
+                    xhrFields: {
+                        withCredentials: true
+                    }
+                })
+                if (s.error !== 0) {
+                    mdui.snackbar({message: `❌${s.msg}`})
+                    return
+                }
+                s.data.detail.forEach(e => {
+                    res.data.data_raw_id[e.data_raw_id] = e
+                    res.data.id[e.id] = e
+                    if (e.todo_num > 0) {
+                        res.data.todo.data_raw_id[e.data_raw_id] = e
+                        res.data.todo.id[e.id] = e
+                    }
+                })
+                res.data.refe = s
+                return res
             }
         }
     }
@@ -106,6 +136,7 @@
                 QZ_weiyu: {name: '魏宇', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_tianyu1: {name: '田宇', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_zhoujianhao: {name: '周建豪', passwd: 'qzqh-2024', region_code: 'bz90077'},
+                QZ_zhangyan: {name: '张岩 - 杨振', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 quanzhiguanli: {name: '管理', passwd: 'mimaQzqh-2024', region_code: 'bz90077'}
             },
             users: {
@@ -124,6 +155,7 @@
                 46762: {name: '刘晶晶'},
                 37925: {name: '王玉英'},
                 37923: {name: '袁友超'},
+                37929: {name: '张岩 - 杨振'},
                 37927: {name: '田涛 - 张东山'},
             },
             accountSwitchInit(accounts) {
@@ -162,7 +194,7 @@
             lockClaimInit(users) {
                 let uids = Object.keys(users)
                 let $usersSelect = this.$usersSelect.find('.users-select')
-                if (localStorage.lockClaimUsers !== undefined) {
+                if (localStorage.lockClaimUsers !== undefined && localStorage.lockClaimUsers !== '') {
                     $usersSelect[0].value = localStorage.lockClaimUsers.split(',')
                 }
                 uids.forEach(e => {
@@ -184,31 +216,6 @@
                 }
                 return res
             },
-            async getProjectDataList() {
-                let res = {data: { data_raw_id: {}, id: {}, todo: {data_raw_id: {}, id: {}} }}
-                let s = await $.ajax({
-                    type: "GET",
-                    url: `https://anno.horizon.ai/api/job/v2/projects/${this.urlParams.project}/vers?limit=1000&stage_id=${this.urlParams.stage_id}&page=1&status=2`,
-                    dataType: 'json',
-                    xhrFields: {
-                        withCredentials: true
-                    }
-                })
-                if (s.error !== 0) {
-                    mdui.snackbar({message: `❌${s.msg}`})
-                    return
-                }
-                s.data.detail.forEach(e => {
-                    res.data.data_raw_id[e.data_raw_id] = e
-                    res.data.id[e.id] = e
-                    if (e.todo_num > 0) {
-                        res.data.todo.data_raw_id[e.data_raw_id] = e
-                        res.data.todo.id[e.id] = e
-                    }
-                })
-                res.data.refe = s
-                return res
-            },
             async getJobDataList(dataVerId) {
                 let res = {data: { job_id: {}, user: {} }}
                 let s = await $.ajax({
@@ -224,6 +231,10 @@
                     return
                 }
                 let {detail} = s.data
+                if (detail === null) {
+                    mdui.snackbar({message: `❌啥也没有呀!`})
+                    return
+                }
                 for (let i = 0; i < detail.length; i++) {
                     let { job_id, image_key, data_ver_id } = detail[i]
                     detail[i].browseUrl = `https://anno.horizon.ai/annotation-tool/4d-tool-static/#/?data_ver_id=${data_ver_id}&stage_id=${this.urlParams.stage_id}&image_key=${image_key}&project_id=${this.urlParams.project}&job_id=${job_id}&act=browser&model=logical&token=undefined`
@@ -262,9 +273,12 @@
         loadExec() {
             this.urlParams = this.getUrlParams()
             $(document.body).append(this.$personnelScreening, this.$anyInfo, this.$lockClaim, this.$usersSelect)
-            setTimeout(() => {
-                this.accountSwitchInit(this.accounts)
-            }, 250)
+            const timer = setInterval(() => {
+                if ($('.label-header .header-menu .name').text() !== '') {
+                    this.accountSwitchInit(this.accounts)
+                    clearInterval(timer)
+                }
+            }, 50)
             this.lockClaimInit(this.users)
             $(document).on('keydown', async e => {
                 if (e.code === 'Backquote') {
@@ -307,6 +321,10 @@
                     await this.showPersonScreen(data_raw_id)
                 }
             })
+            this.$personnelScreening.on('contextmenu', e => {
+                this.$anyInfo[0].open = !this.$anyInfo[0].open
+                e.preventDefault()
+            })
             this.$lockClaim.on('contextmenu', e => {
                 this.$usersSelect[0].open = !this.$usersSelect[0].open
                 e.preventDefault()
@@ -316,7 +334,7 @@
 
     const routeAnnotationTool = {
         routes: '*://anno.horizon.ai/annotation-tool/*',
-        style: `.tool-main .tool-box .tool-box-left{color: aliceblue}`,
+        style: `.tool-main .tool-box .tool-box-left{color: aliceblue}.tool-main .tool-box .tool-box-center{z-index:9}`,
         extend: {
             getFeatureLI() {
                 const maps = {}
@@ -343,7 +361,7 @@
                         callback(this.featureLI)
                         clearInterval(timer)
                     }
-                }, 2500)
+                }, 2000)
             },
             getUrlParams() {
                 let res = {}
@@ -355,6 +373,46 @@
                     res[pair[0]] = pair[1]
                 }
                 return res
+            },
+            async mandatorySubmit(lockClaim = false) {
+                let s = await $.ajax({
+                    type: "POST",
+                    url: `https://anno.horizon.ai/api/job/v2/workflow/dispatch`,
+                    dataType: 'json',
+                    contentType: 'application/json',
+                    data: JSON.stringify({
+                        "action": "accept",
+                        "project_id": Number(this.urlParams.project_id),
+                        "batch": [
+                            {
+                                "batch_id": Number(this.urlParams.batch_id),
+                                "data_ver_id": Number(this.urlParams.data_ver_id)
+                            }
+                        ]
+                    }),
+                    xhrFields: {
+                        withCredentials: true
+                    }
+                })
+                if (s.error !== 0) {
+                    mdui.snackbar({message: `❌${s.error} - ${s.msg}`})
+                } else if (s.error === 0 && s.msg === 'success') {
+                    mdui.snackbar({message: `✅提交成功`})
+                    if (lockClaim) {
+                        this.lockClaim({
+                            receiveManner: 'scope',
+                            dataId: this.urlParams.data_ver_id,
+                            idType: 'ver',
+                            projectId: this.urlParams.project_id,
+                            stageId: this.urlParams.stage_id,
+                            target: '_self'
+                        })
+                    } else {
+                        setTimeout(() => {
+                            window.close()
+                        }, 1500)
+                    }
+                }
             }
         },
         loadExec() {
@@ -370,7 +428,7 @@
                 res['标注'] = res['标注'] === undefined ? {status_cn: '🧂', create_time: '', user: {by_name: '无'}} : res['标注']
                 res['质检'] = res['质检'] === undefined ? {status_cn: '🧂', create_time: '', user: {by_name: '无'}} : res['质检']
                 res['验收'] = res['验收'] === undefined ? {status_cn: '🧂', create_time: '', user: {by_name: '无'}} : res['验收']
-                $('.tool-box .tool-box-left').append(`标注: ${res['标注'].user.by_name}<span style="font-size: 12px;color: pink">(${res['标注'].status_cn} ${res['标注'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span> <b style="color: red"> &nbsp;&nbsp❤&nbsp;&nbsp; </b> 质检: ${res['质检'].user.by_name}<span style="font-size: 12px;color: pink">(${res['质检'].status_cn} ${res['质检'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span> <b style="color: red"> &nbsp;&nbsp;❤&nbsp;&nbsp; </b> 验收: ${res['验收'].user.by_name}<span style="font-size: 12px;color: pink">(${res['验收'].status_cn} ${res['验收'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span>`)
+                $('.tool-box .tool-box-left').append(`<p style="position: fixed;left:192px">标注: ${res['标注'].user.by_name}<span style="font-size: 12px;color: pink">(${res['标注'].status_cn} ${res['标注'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span> <b style="color: red"> ❤ </b> 质检: ${res['质检'].user.by_name}<span style="font-size: 12px;color: pink">(${res['质检'].status_cn} ${res['质检'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span> <b style="color: red"> ❤ </b> 验收: ${res['验收'].user.by_name}<span style="font-size: 12px;color: pink">(${res['验收'].status_cn} ${res['验收'].create_time.replace(/(2024-|:[0-9]{1,2}$)/g, '')})</span></p>`)
             })
             this.dataLodingComtated(f => {
                 $(document).on('keydown', e => {
@@ -411,35 +469,63 @@
                     } else if (e.code === 'KeyR') {
                         const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'S' })
                         document.dispatchEvent(event)
+                    }  else if (e.code === 'Period') {
+                        if ($('#viewport-container .frame-viewer-container').css('display') !== 'none') {
+                            $('.frame-viewer-container .frame-viewer-main .frame-viewer-title .frame-viewer-title-operation .iconfont.icon-xiayijiedian1').click()
+                        }
+                    }  else if (e.code === 'Comma') {
+                        if ($('#viewport-container .frame-viewer-container').css('display') !== 'none') {
+                            $('.frame-viewer-container .frame-viewer-main .frame-viewer-title .frame-viewer-title-operation .iconfont.icon-shangyijiedian').click()
+                        }
                     } else if (e.code === 'Digit3' || e.code === 'Numpad3') {
                         let event = new MouseEvent('mousedown')
                         $('section.element-tools-main .tool-button-main')[1].dispatchEvent(event)
                     } else if (e.ctrlKey && e.code === 'Enter') {
-                        if ($('.logic-quality-main .ignore-div .ignore-checkbox').hasClass('ant-checkbox-wrapper-checked') === false) {
-                            $('.logic-quality-main .ignore-div .ignore-checkbox').click()
+                        this.mandatorySubmit(true)
+                    } else if (e.altKey && e.code === 'Enter') {
+                        this.mandatorySubmit(false)
+                    } else if (e.code === 'Tab') {
+                        if ($('#viewport-container .frame-viewer-container').css('display') !== 'none') {
+                            $('.frame-viewer-container .frame-viewer-main .frame-viewer-images .ant-card-grid .project-canvas')[window.count].click()
+                            window.count++
+                            if (window.count > 6) window.count = 0
                         }
-                        $('.editor-main .toolbar-area .toolbar-submit-button').click()
-                        setTimeout(() => {
-                            $('.ant-modal-body input[type=checkbox]').click()
-                            $('.ant-modal-footer .ant-btn')[1].click()
-                        }, 150)
-                    } else if (e.ctrlKey && e.code === 'Backspace') {
-                        $('.editor-main .toolbar-area .toolbar-repulse-button').click()
-                        setTimeout(() => {
-                            $('.ant-modal-body input[type=checkbox]').click()
-                            $('.ant-modal-footer .ant-btn')[1].click()
-                        }, 150)
-                    } else if (e.altKey && e.code === 'KeyV') {
-                        if ($('.overview-frame-screen .overview-frame-screen-main .overview-frame-screen-btn .iconfont').length > 0) {
-                            $('.overview-frame-screen .overview-frame-screen-main .overview-frame-screen-btn .iconfont').click()
-                        } else {
-                            $('.frame-viewer-container .frame-viewer-main .frame-viewer-title .icon-guanbi').click()
+                    }
+                })
+                $('.editor-main .toolbar-area .toolbar-repulse-button').on('contextmenu', e => {
+                    $('.editor-main .toolbar-area .toolbar-repulse-button').click()
+                    setTimeout(() => {
+                        $('.ant-modal-body input[type=checkbox]').click()
+                        $('.ant-modal-footer .ant-btn')[1].click()
+                    }, 150)
+                })
+                $('.editor-main .toolbar-area .toolbar-submit-button').on('contextmenu', e => {
+                    if ($('.logic-quality-main .ignore-div .ignore-checkbox').hasClass('ant-checkbox-wrapper-checked') === false) {
+                        $('.logic-quality-main .ignore-div .ignore-checkbox').click()
+                    }
+                    $('.editor-main .toolbar-area .toolbar-submit-button').click()
+                    setTimeout(() => {
+                        $('.ant-modal-body input[type=checkbox]').click()
+                        $('.ant-modal-footer .ant-btn')[1].click()
+                    }, 150)
+                    e.preventDefault()
+                })
+                $(document).on('mousedown', e => {
+                    if (e.button === 2) {
+                        this.pageX = e.pageX
+                        this.pageY = e.pageY
+                    }
+                })
+                $(document).on('mouseup', e => {
+                    if (this.pageX === e.pageX && this.pageY === e.pageY && e.button === 2) {
+                        if ($('#viewport-container .frame-viewer-container').css('display') !== 'none') {
+                            if ($('.overview-frame-screen .overview-frame-screen-main .overview-frame-screen-btn .iconfont').length > 0) {
+                                $('.overview-frame-screen .overview-frame-screen-main .overview-frame-screen-btn .iconfont').click()
+                            } else {
+                                $('.frame-viewer-container .frame-viewer-main .frame-viewer-title .icon-guanbi').click()
+                            }
+                            window.count = 0
                         }
-                        window.count = 0
-                    } else if (e.code === 'KeyV') {
-                        $('.frame-viewer-container .frame-viewer-main .frame-viewer-images .ant-card-grid .project-canvas')[window.count].click()
-                        window.count++
-                        if (window.count > 6) window.count = 0
                     }
                 })
                 const timer = setInterval(() => {
@@ -448,29 +534,8 @@
                         c.find('.parsing-operation span.operation-icon')[0].click()
                         clearInterval(timer)
                     }
-                }, 2500)
+                }, 2000)
                 this.hiddenFeature(['交通灯-灯泡', '交通灯-灯箱', '标识牌'], this.featureLI)
-                $('.editor-main .toolbar-area .toolbar-submit-button').on('click', e => {
-                    if (e.ctrlKey) {
-                        if ($('.logic-quality-main .ignore-div .ignore-checkbox').hasClass('ant-checkbox-wrapper-checked') === false) {
-                            $('.logic-quality-main .ignore-div .ignore-checkbox').click()
-                        }
-                        $('.editor-main .toolbar-area .toolbar-submit-button').click()
-                        setTimeout(() => {
-                            $('.ant-modal-body input[type=checkbox]').click()
-                            $('.ant-modal-footer .ant-btn')[1].click()
-                        }, 150)
-                    }
-                })
-                $('.editor-main .toolbar-area .toolbar-repulse-button').on('click', e => {
-                    if (e.ctrlKey) {
-                        $('.editor-main .toolbar-area .toolbar-repulse-button').click()
-                        setTimeout(() => {
-                            $('.ant-modal-body input[type=checkbox]').click()
-                            $('.ant-modal-footer .ant-btn')[1].click()
-                        }, 150)
-                    }
-                })
             })
         }
     }
@@ -492,18 +557,18 @@
                 if (urlMatch(routes[i], location.href)) {
                     Object.assign(target, extend instanceof Object === false ? {} : extend)
                     $(document.head)
-                        .append(`<style>${style}</style>`)
+                        。append(`<style>${style}</style>`)
                     if (typeof startExec === 'function')
                         startExec.call(target)
                     if (typeof bodyExec === 'function') {
                         bodyExec = bodyExec.bind(target)
                         $(document)
-                            .on('DOMContentLoaded', e.bodyExec)
+                            。on('DOMContentLoaded', e.bodyExec)
                     }
                     if (typeof loadExec === 'function') {
                         loadExec = loadExec.bind(target)
                         $(window)
-                            .on('load', loadExec)
+                            。on('load', loadExec)
                     }
                 }
             }
