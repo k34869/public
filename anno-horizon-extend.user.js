@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         anno-horizon-Extend
-// @version      1.1.0
+// @version      1.1.1
 // @description  anno-horizon 扩展程序
 // @author       Timeic
 // @license      GPL-3.0 License
@@ -145,6 +145,7 @@
                 QZ_ningbinbin1: {name: '宁斌斌', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_houmengmeng: {name: '侯蒙蒙', passwd: 'Qzqh-2024', region_code: 'bz90077'},
                 QZ_chenjun: {name: '陈俊', passwd: 'qzqh-2024', region_code: 'bz90077'},
+                QZ_gaoweijie: {name: '高伟杰', passwd: 'Qzqh-2024', region_code: 'bz90077'},
                 QZ_lijingqi: {name: '李靖琦', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_liyueyue: {name: '李悦悦', passwd: 'Qzqh-2024', region_code: 'bz90077'},
                 QZ_guanzirui1: {name: '关子瑞', passwd: 'qzqh-2024', region_code: 'bz90077'},
@@ -165,8 +166,7 @@
                 QZ_weiyu: {name: '魏宇', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_tianyu1: {name: '田宇', passwd: 'qzqh-2024', region_code: 'bz90077'},
                 QZ_zhoujianhao: {name: '周建豪', passwd: 'qzqh-2024', region_code: 'bz90077'},
-                QZ_zhangyan: {name: '张岩', passwd: 'qzqh-2024', region_code: 'bz90077'},
-                quanzhiguanli: {name: '管理', passwd: 'mimaQzqh-2024', region_code: 'bz90077'}
+                QZ_zhangyan: {name: '张岩', passwd: 'qzqh-2024', region_code: 'bz90077'}
             },
             users: {
                 37922: {name: '李悦悦'},
@@ -518,7 +518,7 @@
                         const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'O' })
                         document.dispatchEvent(event)
                     } else if (e.code === 'KeyX') {
-                        const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'K' })
+                        const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Backspace' })
                         document.dispatchEvent(event)
                     } else if (e.code === 'KeyS') {
                         const event = new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: '0' })
