@@ -230,6 +230,5 @@
             })
         }
     }
-
     gloabl.extendApp = extendWebPage([routeMashupAts, routeMashupTools])
 })(window)
