@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         mioffice-label-Extend
-// @version      1.0.1
+// @version      1.0.2
 // @description  mioffice-label 扩展程序
 // @author       Timeic
 // @license      MIT
@@ -52,7 +52,7 @@
                 $('.shape-menu .shape-menu-item')[index].click()
             },
             draw(target, index) {
-                if (target.nodeName !== 'INPUT') {
+                if (target.nodeName !== 'INPUT' || target.nodeName !== 'TEXTAREA') {
                     const sct = $('.video-tracking-app .sidebar-category-title')[index]
                     mdui.snackbar({message: `🔔绘制 '${sct.textContent.replace(/[0-9]+/g, '')}'`})
                     sct.click()
@@ -60,7 +60,7 @@
                 }
             },
             move(target, index) {
-                if (target.nodeName !== 'INPUT') {
+                if (target.nodeName !== 'INPUT' || target.nodeName !== 'TEXTAREA') {
                     this.dispatchMenu(0)
                     $('.ant-select-selector')[0].dispatchEvent(new MouseEvent('mousedown', {
                         bubbles: true,
