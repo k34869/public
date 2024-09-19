@@ -1,6 +1,6 @@
 // ==UserScript==
 // @name         mioffice-label-Extend
-// @version      1.0.3
+// @version      1.0.4
 // @description  mioffice-label 扩展程序
 // @author       Timeic
 // @license      MIT
@@ -15,7 +15,8 @@
         routes: '*://tjv1-gawain-label.evad.mioffice.cn/appen/mashup/ssr/annotation-task-start*',
         style: `body{background: #282c33}#record-0 > div:nth-child(2){filter: invert(1);background: bisque;}`,
         startExec() {
-            mdui.snackbar({message: `脚本已被作者关闭，如需开启请联系作者。。。`})
+            gloabl.urlParams = extendWebPage.parseUrlParams(location.href)
+            mdui.snackbar({message: `🔔${decodeURIComponent(this.urlParams.title)}`})
         }
     }
 
@@ -82,6 +83,7 @@
                         .replace(/十字路口[十字路口\w ]+/g, '十字路口')
                         .replace(/斑马线[斑马线\w ]+/g, '斑马线')
                         .replace(/其他路口[其他路口\w ]+/g, '其他路口')
+                    console.log(t, objName, this.nMap, this.nMap[objName], $($('.rc-virtual-list')[0]).find('.ant-select-item.ant-select-item-option'));
                     $($('.rc-virtual-list')[0]).find('.ant-select-item.ant-select-item-option')[index === undefined ? this.nMap[objName] : index].click()
                     $('.ant-select-selector')[1].dispatchEvent(new MouseEvent('mousedown', {
                         bubbles: true,
@@ -113,6 +115,119 @@
                     }
                 }, 500)
             }
+        },
+        startExec() {
+            this.dataLoad(() => {
+                $($('.video-tracking-app .tab-header > div')[1]).on('click', () => {
+                    setTimeout(() => {
+                        $('.video-tracking-app .sidebar-validation-content .ant-collapse>.ant-collapse-item>.ant-collapse-header').click()    
+                    }, 20)
+                })
+                const toolbarBtns = $('.video-tracking-app .toolbar .icon-button')
+                toolbarBtns[toolbarBtns.length - 4].click()
+                toolbarBtns[toolbarBtns.length - 5].click()
+                $('.toolbar .dropdown-button .dropdown-menu-item')[3].click()
+                $(document).on('keydown', e => {
+                    if (e.code === 'KeyX') {
+                        if (e.target.nodeName !== 'INPUT') 
+                            this.dispatchMenu(1)
+                    } else if (e.code === 'KeyR') {
+                        if (e.target.nodeName !== 'INPUT') 
+                            document.dispatchEvent(new KeyboardEvent('keypress', {
+                                key: 'o',
+                                code: 'KeyO',
+                                charCode: 0,
+                                keyCode: 79,
+                                bubbles: true,
+                                cancelable: true
+                            }))
+                    } else if (e.code === 'KeyE') {
+                        if (e.target.nodeName !== 'INPUT') 
+                            $('.video-tracking-app .frame-control .frame-action-icon')[3].click()
+                    } else if (e.code === 'KeyW') 
+                        this.move(e.target)
+                    else if (e.code === 'KeyQ') {
+                        if (e.target.nodeName !== 'INPUT') 
+                            $('.video-tracking-app .frame-control .frame-action-icon')[1].click()
+                    } else if (e.code === 'KeyZ') {
+                        if (e.ctrlKey === false) {
+                            toolbarBtns[toolbarBtns.length - 7].click()
+                            mdui.snackbar({message: `🔔隐藏选中`})
+                        }
+                    } else if (e.code === 'KeyA') {
+                        toolbarBtns[toolbarBtns.length - 6].click()
+                        mdui.snackbar({message: `🔔隐藏全部`})
+                    } else if (e.code === 'Digit1') 
+                        this.draw(e.target, 0)
+                    else if (e.code === 'Digit2')
+                        this.draw(e.target, 1)
+                    else if (e.code === 'Digit3')
+                        this.draw(e.target, 2)
+                    else if (e.code === 'Digit4')
+                        this.draw(e.target, 3)
+                    else if (e.code === 'Digit5')
+                        this.draw(e.target, 4)
+                    else if (e.code === 'Digit6')
+                        this.draw(e.target, 5)
+                    else if (e.code === 'Digit7')
+                        this.draw(e.target, 6)
+                    else if (e.code === 'Digit8')
+                        this.draw(e.target, 7)
+                    else if (e.code === 'Digit9')
+                        this.draw(e.target, 8)
+                    else if (e.code === 'Digit0')
+                        this.draw(e.target, 9)
+                    else if (e.code === 'Minus')
+                        this.draw(e.target, 10)
+                    else if (e.code === 'Equal')
+                        this.draw(e.target, 11)
+                    else if (e.code === 'Numpad0') 
+                        this.move(e.target, 9)
+                    else if (e.code === 'Numpad1') 
+                        this.move(e.target, 0)
+                    else if (e.code === 'Numpad2') 
+                        this.move(e.target, 1)
+                    else if (e.code === 'Numpad3') 
+                        this.move(e.target, 2)
+                    else if (e.code === 'Numpad4') 
+                        this.move(e.target, 3)
+                    else if (e.code === 'Numpad5') 
+                        this.move(e.target, 4)
+                    else if (e.code === 'Numpad6') 
+                        this.move(e.target, 5)
+                    else if (e.code === 'Numpad7') 
+                        this.move(e.target, 6)
+                    else if (e.code === 'Numpad8') 
+                        this.move(e.target, 7)
+                    else if (e.code === 'Numpad9') 
+                        this.move(e.target, 8)
+                    else if (e.keyCode === 109) 
+                        this.move(e.target, 10)
+                    else if (e.keyCode === 107) 
+                        this.move(e.target, 11)
+                })
+                $(document).on('mousedown', e => {
+                    if (e.button === 2) {
+                        this.pageX = e.pageX
+                        this.pageY = e.pageY
+                    } else if (e.button === 1) 
+                        this.dispatchMenu(1)
+                })
+                $(document).on('mouseup', e => {
+                    if (this.pageX === e.pageX && this.pageY === e.pageY && e.button === 2) {
+                        document.dispatchEvent(
+                            new KeyboardEvent('keydown', { bubbles: true, cancelable: true, key: 'Enter' })
+                        )
+                        $('.video-tracking-app .operation-navigator .pointer').click()
+                    }
+                })
+            })
+            $(document).on('keydown', e => {
+                if (e.code === 'KeyF') {
+                    const toolbarBtns = $('.video-tracking-app .toolbar .icon-button')
+                    toolbarBtns[toolbarBtns.length - 1].click()
+                }
+            })
         }
     }
     gloabl.extendApp = extendWebPage([routeMashupAts, routeMashupTools])
