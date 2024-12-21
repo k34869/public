@@ -251,7 +251,7 @@
      * @param {Boolean} list 列表数据
      * @returns {Proxy} 响应式数据
     */
-    function list(els, list) {
+    function rFor(els, list) {
         renderFor(els, list)
     
         return new Proxy(list, {
@@ -280,7 +280,7 @@
         })
     }
 
-    function bind(els, data) {
+    function rBind(els, data) {
         renderBind(els, data)
 
         return new Proxy(data, {
@@ -339,8 +339,8 @@
     Object.getPrototypeOf(extendWebPage).saveTextFile = saveTextFile
     Object.getPrototypeOf(extendWebPage).parseUrlParams = parseUrlParams
     Object.getPrototypeOf(extendWebPage).isShow = isShow
-    Object.getPrototypeOf(extendWebPage).list = list
-    Object.getPrototypeOf(extendWebPage).bind = bind
+    Object.getPrototypeOf(extendWebPage).rFor = rFor
+    Object.getPrototypeOf(extendWebPage).rBind = rBind
 
     global.extendWebPage = extendWebPage
 })(window)
