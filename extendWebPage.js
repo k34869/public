@@ -310,6 +310,7 @@
                 if (urlMatch(routes[i], location.href)) {
                     $(document.head)
                         .append(`<style>${style}</style>`)
+                    target.__style = style
                     if (typeof startExec === 'function')
                         startExec.call(target)
                     if (typeof bodyExec === 'function') {
