@@ -267,15 +267,15 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
                         $(document)
                             .one('DOMContentLoaded', e.bodyExec)
                     }
-                    if (typeof loadExec === 'function') {
-                        loadExec = loadExec.bind(target)
-                        $(window)
-                            .one('load', loadExec)
-                    }
                     if (typeof _exec === 'function') {
                         _exec = _exec.bind(target)
                         $(window)
                             .one('load', _exec)
+                    }
+                    if (typeof loadExec === 'function') {
+                        loadExec = loadExec.bind(target)
+                        $(window)
+                            .one('load', loadExec)
                     }
                 }
             }
