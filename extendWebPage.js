@@ -127,10 +127,10 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
         $.each(els, (i, container) => {
             const forAttr = container.getAttribute('for'); // 获取 data-for 指令
             if (!forAttr) return;
-    
+
             const match = forAttr.match(/(\w+)\s+in\s+(\w+)/); // 解析 "item in items"
             if (!match) return;
-    
+
             const [, itemAlias, dataKey] = match; // 解构获取 item 和 items
             const listData = data[dataKey]; // 根据 key 获取数组数据
             if (!Array.isArray(listData)) return; // 确保是数组
@@ -199,6 +199,50 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
         })
     }
 
+    function draggable(isSave, execTime) {
+        let offsetX = 0
+        let offsetY = 0
+        const el = $(".mdui-draggable")
+        if (isSave) {
+            const f = () => {
+                el.css({
+                    left: `${localStorage.offsetX}px`,
+                    top: `${localStorage.offsetY}px`,
+                    position: "absolute",
+                })
+            }
+            if (localStorage.offsetX && localStorage.offsetY) 
+                if (execTime === undefined) 
+                    f()
+                else
+                    $(window).on(execTime, f)
+        }
+        const draggable = e => {
+            const left = e.pageX - offsetX;
+            const top = e.pageY - offsetY;
+            if (isSave) {
+                localStorage.offsetX = left
+                localStorage.offsetY = top
+            }
+            el.css({
+                left: `${left}px`,
+                top: `${top}px`,
+                position: "absolute",
+            })
+        }
+        el.on("mousedown", e => {
+            isDragging = true
+            offsetX = e.pageX - el.offset().left
+            offsetY = e.pageY - el.offset().top
+            el.css("cursor", "grabbing")
+            $(document).on("mousemove", draggable)
+        })
+        el.on("mouseup", function () {
+            $(document).off("mousemove", draggable)
+            el.css("cursor", "grab")
+        })
+    }
+
     /**
      * extendWebPage, 扩展Web页面
      * @param {Array} options 配置项
@@ -207,7 +251,7 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
     function extendWebPage(options) {
         let target = {}
         for (let i = 0; i < options.length; i++) {
-            let { routes, style, startExec, bodyExec, loadExec, extend } = options[i]
+            let { routes, style, startExec, bodyExec, _exec, loadExec, extend } = options[i]
             Object.assign(target, extend instanceof Object === false ? {} : extend)
             if (typeof routes === 'string')
                 routes = new Array(routes)
@@ -221,12 +265,17 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
                     if (typeof bodyExec === 'function') {
                         bodyExec = bodyExec.bind(target)
                         $(document)
-                            .on('DOMContentLoaded', e.bodyExec)
+                            .one('DOMContentLoaded', e.bodyExec)
                     }
                     if (typeof loadExec === 'function') {
                         loadExec = loadExec.bind(target)
                         $(window)
-                            .on('load', loadExec)
+                            .one('load', loadExec)
+                    }
+                    if (typeof _exec === 'function') {
+                        _exec = _exec.bind(target)
+                        $(window)
+                            .one('load', _exec)
                     }
                 }
             }
@@ -247,6 +296,7 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
     Object.getPrototypeOf(extendWebPage).isShow = isShow
     Object.getPrototypeOf(extendWebPage).rFor = rFor
     Object.getPrototypeOf(extendWebPage).rBind = rBind
+    Object.getPrototypeOf(extendWebPage).draggable = draggable
 
     global.extendWebPage = extendWebPage
 })(window)
