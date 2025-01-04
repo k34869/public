@@ -199,23 +199,17 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
         })
     }
 
-    function draggable(isSave, execTime) {
+    function draggable(isSave) {
         let offsetX = 0
         let offsetY = 0
         const el = $(".mdui-draggable")
         if (isSave) {
-            const f = () => {
+            if (localStorage.offsetX && localStorage.offsetY) 
                 el.css({
                     left: `${localStorage.offsetX}px`,
                     top: `${localStorage.offsetY}px`,
                     position: "absolute",
                 })
-            }
-            if (localStorage.offsetX && localStorage.offsetY) 
-                if (execTime === undefined) 
-                    f()
-                else
-                    $(window).on(execTime, f)
         }
         const draggable = e => {
             const left = e.pageX - offsetX;
