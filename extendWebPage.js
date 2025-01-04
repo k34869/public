@@ -199,7 +199,7 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
         })
     }
 
-    function draggable(isSave) {
+    function draggable(isSave, ctrlKey) {
         let offsetX = 0
         let offsetY = 0
         const el = $(".mdui-draggable")
@@ -225,13 +225,15 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
             })
         }
         el.on("mousedown", e => {
+            if (ctrlKey) if (e.ctrlKey !== true) return
             isDragging = true
             offsetX = e.pageX - el.offset().left
             offsetY = e.pageY - el.offset().top
             el.css("cursor", "grabbing")
             $(document).on("mousemove", draggable)
         })
-        el.on("mouseup", function () {
+        el.on("mouseup", function (e) {
+            if (ctrlKey) if (e.ctrlKey !== true) return
             $(document).off("mousemove", draggable)
             el.css("cursor", "grab")
         })
