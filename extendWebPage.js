@@ -295,4 +295,4 @@ $(document.head).append(`<style id="mdui-style">:root{--mdui-breakpoint-xs:0px;-
     Object.getPrototypeOf(extendWebPage).draggable = draggable
 
     global.extendWebPage = extendWebPage
-})(window)
+})(window);
