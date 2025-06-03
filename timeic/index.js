@@ -97,7 +97,10 @@ function imageOcr() {
     mdui.snackbar({ message: '🔥文字识别中···' })
     $ocrResult.text('🔥识别中···')
     $wcText.text('')
-    $.getJSON(`https://luckycola.com.cn/tools/urlocr?ColaKey=XNPZ2jf6DXL4fl1748684780650O9TXElAPXS&imgurl=${$imageUrlInput[0].value}`, (d) => {
+    $.ajax({
+        type: 'GET',
+        url: `https://luckycola.com.cn/tools/urlocr?ColaKey=XNPZ2jf6DXL4fl1748684780650O9TXElAPXS&imgurl=${$imageUrlInput[0].value}`
+    }).then(d => {
         mdui.snackbar({ message: d.msg })
         const text = d.data.ParsedResults[0].ParsedText
         const chsText = text.match(/[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g).join('')
