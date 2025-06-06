@@ -52,7 +52,7 @@ html, body {
 .menu-button {
     position: fixed;
     bottom: 20px;
-    right: 18px;
+    right: 24px;
 }
 
 @keyframes animate {
@@ -70,7 +70,7 @@ html, body {
 .menu-button-after {
     position: fixed;
     bottom: 70px;
-    right: 25px;
+    right: 34px;
     font-size: 40px;
     transform: rotate(90deg);
     animation-name: animate;
@@ -81,7 +81,7 @@ html, body {
 .menu-warp {
     position: fixed;
     bottom: 75px;
-    right: 15px;
+    right: 20px;
     width: 350px;
     background-color: white;
     border-radius: 5px;
@@ -98,7 +98,7 @@ html, body {
     border-color: white transparent transparent transparent;
     position: absolute;
     bottom: -20px;
-    right: 36px;
+    right: 42px;
 }
 
 .menu-warp .option {
@@ -138,12 +138,24 @@ html, body {
     box-shadow: 1px 1px 8px rgba(128, 128, 128, 0.6);
 }
 
-.box::after {
+.box.normal::after {
     content: '';
     width: 10px;
     height: 10px;
     border-radius: 10px 0 0 0;
     background: yellow;
+    position: absolute;
+    bottom: 0;
+    right: 0;
+    cursor: nwse-resize;
+}
+
+.box.active::after {
+    content: '';
+    width: 10px;
+    height: 10px;
+    border-radius: 10px 0 0 0;
+    background: red;
     position: absolute;
     bottom: 0;
     right: 0;
@@ -174,6 +186,7 @@ html, body {
     font-size: 10px;
     padding: 12px;
     border-radius: 3px;
+    border: 1px solid gray;
 }
 
 .wc-length {
