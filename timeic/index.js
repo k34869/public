@@ -31,17 +31,14 @@ $(document.body).append(`<span class="image-size" title="指的是图片中包�
         <mdui-text-field class="rows-input mr" variant="outlined" label="行数" value="3"></mdui-text-field>
         <mdui-text-field class="cols-input mr" variant="outlined" label="列数" value="3"></mdui-text-field>
     </div>
-    <h2 class="option">👉文案字数统计</h2>
+    <h2 class="option">👉字数统计</h2>
     <div class="option-list">
-        <mdui-button class="ocr-button mr" onclick="imageOcr()" title="基于 OCR，仅供参考">OCR 识别</mdui-button>
+        <mdui-card class="wc-length">英文与数字: 0 (0)</mdui-card>
+        <mdui-card class="wc-length">中文: 0</mdui-card>
+        <mdui-card class="wc-length">总计: 0</mdui-card>
     </div>
     <div class="option-list">
-        <mdui-card class="wc-length"></mdui-card>
-        <mdui-card class="wc-length"></mdui-card>
-        <mdui-card class="wc-length"></mdui-card>
-    </div>
-    <div class="option-list">
-        <p class="ocr-result" contenteditable="true"></p>
+        <p class="ocr-result" contenteditable="true" title="输入文字会帮你统计文案字数哦🐱‍💻"></p>
     </div>
 </div>`)
 
@@ -93,30 +90,36 @@ function updateGrid() {
     }
 }
 
-function imageOcr() {
-    mdui.snackbar({ message: '🔥文字识别中···' })
-    $ocrResult.text('🔥识别中···')
-    $wcText.text('')
-    $.ajax({
-        type: 'GET',
-        url: `https://luckycola.com.cn/tools/urlocr?ColaKey=XNPZ2jf6DXL4fl1748684780650O9TXElAPXS&imgurl=${$imageUrlInput[0].value}`
-    }).then(d => {
-        mdui.snackbar({ message: d.msg })
-        const text = d.data.ParsedResults[0].ParsedText
-        const chsText = text.match(/[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g).join('')
-        const eText = text.match(/[a-zA-Z0-9]/g).join('')
-        
-        $wcText.eq(0).text(`英文与数字: ${eText.length} (${eText.length / 2})`)
-        $wcText.eq(1).text(`中文: ${chsText.length}`)
-        $wcText.eq(2).text(`总计: ${eText.length + chsText.length} (${(eText.length / 2) + chsText.length})`)
-        $ocrResult.html(text.replace(/\r\n/g, '<br>'))
-    })
+function wcTextLength() {
+    const text = $ocrResult.text()
+    const chsText = (text.match(/[\u4E00-\u9FFF\u3400-\u4DBF\uF900-\uFAFF]/g) ?? []).join('')
+    const eText = (text.match(/[a-zA-Z0-9]/g) ?? []).join('')
+
+    $wcText.eq(0).text(`英文与数字: ${eText.length} (${eText.length / 2})`)
+    $wcText.eq(1).text(`中文: ${chsText.length}`)
+    $wcText.eq(2).text(`总计: ${eText.length + chsText.length} (${(eText.length / 2) + chsText.length})`)
+}
+
+function move(index = 1, mx = 0, my = 0) {
+    const $box = $(`.box${index}`)
+    let x = (parseFloat($box[0].getAttribute('data-x')) || 0) + mx;
+    let y = (parseFloat($box[0].getAttribute('data-y')) || 0) + my;
+    
+    $box[0].style.transform = `translate(${x}px, ${y}px)`;
+    $box[0].setAttribute('data-x', x);
+    $box[0].setAttribute('data-y', y);
+}
+
+function boxActive(index) {
+    window.thisBoxIndex = index
+    $('.box').removeClass('active').addClass('normal')
+    $(`.box${index}`).removeClass('normal').addClass('active')
 }
 
 let index = 0
 function createBoxSelection() {
     index++
-    const $box = $(`<div class="box box${index}" style="border: ${$boxLineWidthInput[0].value}px solid yellow;"><span class="box-size"></span>${$diagonalSwitch[0].checked ? `<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="0" x2="100%" y2="100%" stroke="yellow" stroke-width="${$boxLineWidthInput[0].value}"/><line x1="100%" y1="0" x2="0" y2="100%" stroke="yellow" stroke-width="${$boxLineWidthInput[0].value}"/></svg>` : ''}</div>`)
+    const $box = $(`<div class="box box${index} normal" onmousedown="boxActive(${index})" style="border: ${$boxLineWidthInput[0].value}px solid yellow;"><span class="box-size"></span>${$diagonalSwitch[0].checked ? `<svg xmlns="http://www.w3.org/2000/svg"><line x1="0" y1="0" x2="100%" y2="100%" stroke="yellow" stroke-width="${$boxLineWidthInput[0].value}"/><line x1="100%" y1="0" x2="0" y2="100%" stroke="yellow" stroke-width="${$boxLineWidthInput[0].value}"/></svg>` : ''}</div>`)
     $(document.body).append($box)
     $box.find('.box-size').on('click', (e) => {
         const text = $(e.target).text()
@@ -131,7 +134,7 @@ function createBoxSelection() {
             move(event) {
                 let x = (parseFloat($box[0].getAttribute('data-x')) || 0) + event.dx;
                 let y = (parseFloat($box[0].getAttribute('data-y')) || 0) + event.dy;
-
+                
                 $box[0].style.transform = `translate(${x}px, ${y}px)`;
                 $box[0].setAttribute('data-x', x);
                 $box[0].setAttribute('data-y', y);
@@ -148,15 +151,15 @@ function createBoxSelection() {
         // 只允许右下角调整大小
         modifiers: [interact.modifiers.restrictSize({
             min: {
-                width: 10,
-                height: 10
+                width: 14,
+                height: 14
             }
         })// 限制最小尺寸
         ],
         inertia: true
     }).draggable({
         inertia: true
-    }).on('resizemove', function(event) {
+    }).on('resizemove', (event) => {
         let {width, height} = event.rect
         event.target.style.width = width + 'px'
         event.target.style.height = height + 'px'
@@ -189,6 +192,10 @@ $image.on('load', () => {
     if (window.isPrevImage) {
         localStorage.prevImageUrl = $imageUrlInput[0].value
     }
+})
+
+$ocrResult.on('input', () => {
+    wcTextLength()
 })
 
 $(window).on('load', () => {
@@ -247,15 +254,39 @@ $(window).on('load', () => {
             window.isPrevImage = true
         }
     })
-Mousetrap.bind('q', () => {
-    createBoxSelection()
-})
-Mousetrap.bind('w', () => {
-    clearAllBox()
-})
-Mousetrap.bind('e', () => {
-    copyAllBoxSize()
-})
+    Mousetrap.bind('q', () => {
+        createBoxSelection()
+    })
+    Mousetrap.bind('w', () => {
+        clearAllBox()
+    })
+    Mousetrap.bind('e', () => {
+        copyAllBoxSize()
+    })
+    Mousetrap.bind('ctrl+up', () => {
+        move(window.thisBoxIndex, 0, -1)
+    })
+    Mousetrap.bind('ctrl+right', () => {
+        move(window.thisBoxIndex, 1, 0)
+    })
+    Mousetrap.bind('ctrl+down', () => {
+        move(window.thisBoxIndex, 0, 1)
+    })
+    Mousetrap.bind('ctrl+left', () => {
+        move(window.thisBoxIndex, -1, 0)
+    })
+    Mousetrap.bind('ctrl+shift+up', () => {
+        move(window.thisBoxIndex, 0, -5)
+    })
+    Mousetrap.bind('ctrl+shift+right', () => {
+        move(window.thisBoxIndex, 5, 0)
+    })
+    Mousetrap.bind('ctrl+shift+down', () => {
+        move(window.thisBoxIndex, 0, 5)
+    })
+    Mousetrap.bind('ctrl+shift+left', () => {
+        move(window.thisBoxIndex, -5, 0)
+    })
 })
 $(window).on('resize', () => {
     updateImageSize()
